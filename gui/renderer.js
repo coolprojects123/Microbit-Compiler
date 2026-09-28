@@ -22,16 +22,72 @@ let lastHexPath = null;
 let consoleCollapsed = false;
 
 // ===== UTILITIES =====
-function log(msg) {
-    const div = document.createElement("div");
-    div.className = "status-line";
-    div.innerHTML = msg;
-    statusBox.appendChild(div);
-    statusBox.scrollTop = statusBox.scrollHeight;
+// ---- xterm console ----
+const term = new Terminal({
+    fontFamily: '"JetBrains Mono", "Fira Code", Consolas, monospace',
+    fontSize: 12,
+    lineHeight: 1.3,
+    scrollback: 5000,
+    convertEol: true,          // tool output uses \n
+    disableStdin: true,        // read-only console
+    cursorInactiveStyle: "none",
+    theme: {
+        background: "#0a0c13",
+        foreground: "#d6dbf0",
+        cursor: "#0a0c13",
+        selectionBackground: "rgba(76, 175, 239, 0.35)",
+        red: "#ff5c5c",
+        green: "#6dd47e",
+        yellow: "#ffa500",
+        blue: "#4cafef",
+        brightBlack: "#7a7f9e",
+        white: "#d6dbf0"
+    }
+});
+const fitAddon = new FitAddon.FitAddon();
+term.loadAddon(fitAddon);
+term.open(statusBox);
+term.write("\x1b[?25l"); // hide cursor
+
+function fitTerminal() {
+    if (statusBox.clientWidth > 0 && statusBox.clientHeight > 0) fitAddon.fit();
+}
+new ResizeObserver(fitTerminal).observe(statusBox);
+
+// ANSI colour helpers
+const c = {
+    red: t => `\x1b[31m${t}\x1b[0m`,
+    green: t => `\x1b[32m${t}\x1b[0m`,
+    yellow: t => `\x1b[33m${t}\x1b[0m`
+};
+
+// Raw tool output (chunks, may or may not end in a newline)
+let atLineStart = true;
+function writeRaw(text) {
+    text = String(text);
+    if (!text) return;
+    term.write(text);
+    atLineStart = /[\r\n]$/.test(text);
+}
+
+// Our own status lines
+function log(text) {
+    writeRaw((atLineStart ? "" : "\n") + text + "\n");
+}
+
+// Build folders are named like 2026-09-28T12-34-56-789Z_name
+function parseBuildTime(name) {
+    const m = name.match(/^(\d{4}-\d\d-\d\d)T(\d\d)-(\d\d)-(\d\d)-(\d{3})Z/);
+    return m ? new Date(`${m[1]}T${m[2]}:${m[3]}:${m[4]}.${m[5]}Z`) : null;
 }
 
 function setProgress(pct) {
     progressBar.style.width = pct + "%";
+}
+
+function setMeta(text, state) {
+    buildMeta.textContent = text;
+    buildMeta.dataset.state = state;
 }
 
 function formatFileSize(bytes) {
@@ -72,35 +128,33 @@ selectBtn.onclick = async () => {
     fileDisplay.textContent = fileName;
 
     try {
-        const fs = require("fs");
-        const stats = fs.statSync(file);
-        fileSize.textContent = formatFileSize(stats.size);
+        fileSize.textContent = formatFileSize(await window.api.fileSize(file));
     } catch {
         fileSize.textContent = "";
     }
 
-    log(`<span class="ansi-green">✔ Loaded:</span> ${fileName}`);
+    log(`${c.green(`✔ Loaded:`)} ${fileName}`);
     switchView("editor");
 };
 
 // ===== BUILD (TOOLBAR BUTTON) =====
 toolbarBuildBtn.onclick = () => {
     if (!selectedFile) {
-        log(`<span class="ansi-red">❌ No file selected.</span>`);
+        log(`${c.red(`❌ No file selected.`)}`);
         return;
     }
 
-    buildMeta.textContent = "Building...";
+    setMeta("Building...", "busy");
     setProgress(0);
 
-    log("<span class='ansi-yellow'>🔨 Starting build...</span>");
+    log(`${c.yellow(`🔨 Starting build...`)}`);
     window.api.startBuild(selectedFile);
 };
 
 // ===== FLASH (TOOLBAR BUTTON) =====
 toolbarFlashBtn.onclick = async () => {
     if (!lastHexPath && !currentBuildFolder) {
-        log(`<span class="ansi-red">❌ No build available to flash.</span>`);
+        log(`${c.red(`❌ No build available to flash.`)}`);
         return;
     }
 
@@ -110,7 +164,7 @@ toolbarFlashBtn.onclick = async () => {
         const files = await window.api.listBuildFiles(currentBuildFolder);
         const hex = files.find(f => f.name.endsWith(".hex"));
         if (!hex) {
-            log(`<span class="ansi-red">❌ No HEX file in this build.</span>`);
+            log(`${c.red(`❌ No HEX file in this build.`)}`);
             return;
         }
         hexPath = hex.path;
@@ -120,47 +174,47 @@ toolbarFlashBtn.onclick = async () => {
     const res = await window.api.flashHex(hexPath);
 
     if (res.ok) {
-        log(`<span class="ansi-green">✔ ${res.message}</span>`);
+        log(`${c.green(`✔ ${res.message}`)}`);
     } else {
-        log(`<span class="ansi-red">❌ ${res.error}</span>`);
+        log(`${c.red(`❌ ${res.error}`)}`);
     }
 };
 
 // ===== CONSOLE ACTIONS =====
 consoleClearBtn.onclick = () => {
-    statusBox.innerHTML = "";
-    log("<span class='ansi-green'>✔ Console cleared</span>");
+    term.reset();
+    term.write("\x1b[?25l");
+    atLineStart = true;
+    log(`${c.green(`✔ Console cleared`)}`);
 };
 
-consoleToggleBtn.onclick = () => {
+if (consoleToggleBtn) consoleToggleBtn.onclick = () => {
     consoleCollapsed = !consoleCollapsed;
 
     if (consoleCollapsed) {
-        statusBox.style.height = "40px";
-        statusBox.style.overflowY = "hidden";
+        statusBox.style.flex = "0 0 60px";
         consoleToggleBtn.textContent = "▲ Expand";
     } else {
-        statusBox.style.height = "";
-        statusBox.style.overflowY = "auto";
+        statusBox.style.flex = "1";
         consoleToggleBtn.textContent = "▼ Collapse";
     }
 };
 
 // ===== IPC LISTENERS =====
 window.api.onBuildLog((msg) => {
-    log(msg);
+    writeRaw(msg);
 });
 
 window.api.onBuildProgress((pct) => {
     setProgress(pct);
-    buildMeta.textContent = `Building ${pct}%`;
+    setMeta(`Building ${pct}%`, "busy");
 });
 
 window.api.onBuildComplete((res) => {
     if (!res.success) {
-        log(`<span class="ansi-red">❌ ${res.error}</span>`);
+        log(`${c.red(`❌ ${res.error}`)}`);
         setProgress(0);
-        buildMeta.textContent = "Build failed";
+        setMeta("Build failed", "error");
         return;
     }
 
@@ -168,15 +222,67 @@ window.api.onBuildComplete((res) => {
     lastHexPath = res.hex || null;
 
     const buildName = res.folder.split(/[\\/]/).pop();
-    log(`<span class="ansi-green">✔ Build complete</span> (took ${res.duration}s)`);
-    log(`<span class="ansi-green">✔ Output folder:</span> ${res.folder}`);
+    log(`${c.green(`✔ Build complete`)} (took ${res.duration}s)`);
+    log(`${c.green(`✔ Output folder:`)} ${res.folder}`);
 
-    buildMeta.textContent = `✔ ${buildName} • ${res.duration}s`;
+    setMeta(`✔ ${buildName} • ${res.duration}s`, "ok");
     setProgress(100);
 
     switchView("editor");
     refreshBuildHistory();
     openBuild(res.folder);
+});
+
+// ===== APPROVAL MODAL =====
+const approvalModal = document.getElementById("approval-modal");
+const approvalTitle = document.getElementById("approval-title");
+const approvalMessage = document.getElementById("approval-message");
+const approvalDetail = document.getElementById("approval-detail");
+const approvalConfirm = document.getElementById("approval-confirm");
+const approvalCancel = document.getElementById("approval-cancel");
+
+const approvalQueue = [];
+let activeApproval = null;
+
+function showNextApproval() {
+    if (activeApproval || approvalQueue.length === 0) return;
+    activeApproval = approvalQueue.shift();
+    const { name, sizeMB, via } = activeApproval;
+    const isPip = via === "pip";
+
+    approvalTitle.textContent = isPip ? "Install required package?" : "Download required tool?";
+    approvalMessage.textContent = `${name} is needed to build this file.`;
+    approvalDetail.textContent = isPip
+        ? `It will be installed with pip into your Python (about ${sizeMB} MB).`
+        : `About ${sizeMB} MB will be downloaded and kept in the app's data folder. No admin rights needed.`;
+    approvalConfirm.textContent = isPip ? "Install" : "Download";
+
+    approvalModal.classList.add("open");
+    approvalConfirm.focus();
+}
+
+function answerApproval(ok) {
+    if (!activeApproval) return;
+    const { id, name } = activeApproval;
+    activeApproval = null;
+    approvalModal.classList.remove("open");
+
+    window.api.respondApproval(id, ok);
+    log(ok
+        ? `${c.green(`✔ Approved:`)} ${name}`
+        : `${c.yellow(`Declined:`)} ${name}`);
+    showNextApproval();
+}
+
+approvalConfirm.onclick = () => answerApproval(true);
+approvalCancel.onclick = () => answerApproval(false);
+document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && activeApproval) answerApproval(false);
+});
+
+window.api.onApprovalRequest(req => {
+    approvalQueue.push(req);
+    showNextApproval();
 });
 
 // ===== BUILD HISTORY =====
@@ -210,14 +316,19 @@ async function refreshBuildHistory() {
 
         const time = document.createElement("div");
         time.className = "build-item-time";
-        time.textContent = new Date(parseInt(b.name) * 1000).toLocaleString();
+        const when = parseBuildTime(b.name);
+        time.textContent = when ? when.toLocaleString() : "";
 
         content.appendChild(name);
         content.appendChild(time);
         div.appendChild(icon);
         div.appendChild(content);
 
-        div.onclick = () => openBuild(b.path);
+        div.onclick = () => {
+            buildHistory.querySelectorAll(".build-item").forEach(x => x.classList.remove("selected"));
+            div.classList.add("selected");
+            openBuild(b.path);
+        };
         buildHistory.appendChild(div);
     });
 }
@@ -242,8 +353,8 @@ async function openBuild(folder) {
 
     // Flash button
     const flashBtn2 = document.createElement("button");
-    flashBtn2.className = "toolbar-btn success";
-    flashBtn2.innerHTML = '<span>⚡</span>Flash';
+    flashBtn2.className = "btn small";
+    flashBtn2.innerHTML = '<span class="material-icons">bolt</span>Flash';
     flashBtn2.style.fontSize = "11px";
     flashBtn2.style.padding = "4px 8px";
 
@@ -252,7 +363,7 @@ async function openBuild(folder) {
         const hex = files.find(f => f.name.endsWith(".hex"));
 
         if (!hex) {
-            log(`<span class="ansi-red">❌ No HEX file in this build.</span>`);
+            log(`${c.red(`❌ No HEX file in this build.`)}`);
             return;
         }
 
@@ -260,15 +371,15 @@ async function openBuild(folder) {
         const res = await window.api.flashHex(hex.path);
 
         if (res.ok) {
-            log(`<span class="ansi-green">✔ ${res.message}</span>`);
+            log(`${c.green(`✔ ${res.message}`)}`);
         } else {
-            log(`<span class="ansi-red">❌ ${res.error}</span>`);
+            log(`${c.red(`❌ ${res.error}`)}`);
         }
     };
 
     // Delete button
     const delBtn = document.createElement("button");
-    delBtn.className = "toolbar-btn danger";
+    delBtn.className = "btn small danger";
     delBtn.innerHTML = '<span class="material-icons">delete</span>Delete';
     delBtn.style.fontSize = "11px";
     delBtn.style.padding = "4px 8px";
@@ -283,7 +394,7 @@ async function openBuild(folder) {
                     <div class="material-icons">inventory_2</div>
                     <div class="empty-state-text">Select a build to view files</div>
                 </div>`;
-            buildMeta.textContent = "Ready";
+            setMeta("Ready", "idle");
         }
 
         refreshBuildHistory();
@@ -331,6 +442,6 @@ async function openBuild(folder) {
 
 // ===== INITIALIZATION =====
 (async () => {
-    log("<span class='ansi-green'>✔ Micro:bit Compiler Studio ready</span>");
+    log(`${c.green(`✔ Micro:bit Compiler Studio ready`)}`);
     await refreshBuildHistory();
 })();
