@@ -1,6 +1,0 @@
-^Available configure presets:
-
-  "zzzzzz"       - Sleepy
-  "aaaaaaaa"     - Screaming
-  "mmmmmm"
-  "no-generator"$

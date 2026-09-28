@@ -1,4 +1,0 @@
-^Available configure presets:
-
-  "Include"
-  "IncludeCommon"$

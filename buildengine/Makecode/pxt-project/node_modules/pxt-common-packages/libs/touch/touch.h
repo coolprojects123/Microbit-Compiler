@@ -1,1 +1,0 @@
-#define TouchButton CapTouchButton *

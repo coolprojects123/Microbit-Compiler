@@ -1,147 +1,152 @@
 const fs = require("fs");
 const path = require("path");
 const { spawn } = require("child_process");
-const { app } = require("electron");
-const os = require("os");
 
-// Helper to resolve resource paths regardless of environment
-const getBaseResources = () => {
-    return (app && app.isPackaged)
-        ? path.join(process.resourcesPath, "resources")
-        : path.join(__dirname, "buildengine");
+const isWin = process.platform === "win32";
+
+// External tools: installed by the user (or overridden via env vars)
+const TOOLS = {
+    npx: process.env.MB_NPX || "npx",
+    python: process.env.MB_PYTHON || (isWin ? "python" : "python3"),
+    py2hex: process.env.MB_PY2HEX || "py2hex", // pip install uflash
+    git: process.env.MB_GIT || "git",
 };
+const CODAL_REPO = "https://github.com/lancaster-university/codal-microbit-v2";
 
-// Centralized Path configuration
-const getPaths = () => {
-    const base = getBaseResources();
-    const isWin = process.platform === "win32";
+// file extension -> root folder inside buildengine
+const ROOTS = { ".ts": "Makecode", ".py": "MPython", ".cpp": "C++", ".c": "C++" };
 
-    return {
-        npx: "npx",
-        python: isWin
-            ? path.join(base, "MPython", "compilerVenv", "Scripts", "python.exe")
-            : path.join(base, "MPython", "compilerVenv", "bin", "python3"),
-        py2hex: isWin
-            ? path.join(base, "MPython", "compilerVenv", "Scripts", "py2hex.exe")
-            : path.join(base, "MPython", "compilerVenv", "bin", "py2hex"),
-        cmake: isWin
-            ? path.join(base, "toolchain", "cmake", "bin", "cmake.exe")
-            : path.join(base, "toolchain", "cmake", "bin", "cmake"),
-        ninja: isWin
-            ? path.join(base, "toolchain", "ninja", "ninja.exe")
-            : path.join(base, "toolchain", "ninja", "ninja")
-    };
-};
+let ENGINE = null;
 
-// Public build root (works for all users)
-function getSystemBuildRoot() {
-    // Windows: AppData\Roaming\microbit-compiler-builds
-    // macOS: Library/Application Support/microbit-compiler-builds
-    // Linux: ~/.config/microbit-compiler-builds
-    const dir = path.join(app.getPath("appData"), "microbit-compiler");
-    
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-    }
+// Step 1: app open -> create buildengine folder.
+// Call init(baseDir) on startup; if you don't, the first build falls back
+// to Electron's userData folder (or ./ when running outside Electron).
+function init(baseDir) {
+    ENGINE = path.join(baseDir, "buildengine");
+    fs.mkdirSync(ENGINE, { recursive: true });
+    return ENGINE;
+}
+
+function defaultBaseDir() {
+    try {
+        const { app } = require("electron");
+        if (app && app.getPath) return app.getPath("userData");
+    } catch (_) { /* not running in Electron */ }
+    return process.cwd();
+}
+
+// Step 3: on first build of a type -> create its root folder
+function ensureRoot(ext) {
+    if (!ENGINE) init(defaultBaseDir());
+    const name = ROOTS[ext];
+    if (!name) throw new Error("Unsupported file type: " + ext);
+    const dir = path.join(ENGINE, name);
+    fs.mkdirSync(dir, { recursive: true });
     return dir;
 }
 
-
-function createBuildFolder(srcFile) {
-    const baseName = path.basename(srcFile, path.extname(srcFile));
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const root = getSystemBuildRoot();
-    const folder = path.join(root, "Builds", `${timestamp}_${baseName}`);
-    try {
-        fs.mkdirSync(folder, { recursive: true });
-    } catch (err) {
-        // Fallback to user directory if public directory fails
-        const fallbackRoot = path.join(os.homedir(), ".microbit-compiler");
-        const fallbackFolder = path.join(fallbackRoot, "Builds", `${timestamp}_${baseName}`);
-        fs.mkdirSync(fallbackFolder, { recursive: true });
-        return fallbackFolder;
-    }
-    return folder;
+function makeOutDir(root, file) {
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const name = path.basename(file, path.extname(file));
+    const dir = path.join(root, "out", `${stamp}_${name}`);
+    fs.mkdirSync(dir, { recursive: true });
+    return dir;
 }
 
-const ROOT = __dirname;
-const PROJECT = path.join(ROOT, "buildengine", "Makecode", "pxt-project");
-const BUILT = path.join(PROJECT, "built");
+const q = s => (/\s/.test(s) ? `"${s}"` : s);
 
 function runAsync(cmd, args, cwd, onData) {
     return new Promise((resolve, reject) => {
-        const child = spawn(cmd, args, { cwd, shell: true });
+        // shell only on Windows, where npx is a .cmd file
+        const child = isWin
+            ? spawn([cmd, ...args].map(q).join(" "), { cwd, shell: true })
+            : spawn(cmd, args, { cwd });
         child.stdout.on("data", d => onData(d.toString()));
         child.stderr.on("data", d => onData(d.toString()));
-        child.on("close", code => {
-            if (code === 0) resolve();
-            else reject(new Error(`Process exited with code ${code}`));
-        });
+        child.on("error", err =>
+            reject(new Error(`Could not run "${cmd}". Is it installed and on PATH? (${err.message})`)));
+        child.on("close", code =>
+            code === 0 ? resolve() : reject(new Error(`${cmd} exited with code ${code}`)));
     });
 }
 
 async function buildTS(tsFile, onLog) {
-    const PATHS = getPaths();
-    const buildFolder = createBuildFolder(tsFile);
-    const log = msg => onLog(msg);
+    const root = ensureRoot(".ts");
+    const buildFolder = makeOutDir(root, tsFile);
 
-    log("🔨 Building TypeScript...");
-    const code = fs.readFileSync(tsFile, "utf8");
-    fs.writeFileSync(path.join(PROJECT, "main.ts"), code);
+    onLog("🔨 Building TypeScript...\n");
+    fs.copyFileSync(tsFile, path.join(root, "main.ts"));
+    fs.writeFileSync(path.join(root, "pxt.json"), JSON.stringify({
+        name: "build",
+        dependencies: { core: "*", radio: "*", microphone: "*" },
+        files: ["main.ts"],
+    }, null, 2));
 
-    await runAsync(PATHS.npx, ["pxt", "install"], PROJECT, log);
-    await runAsync(PATHS.npx, ["pxt", "build", "--hw", "v2"], PROJECT, log);
+    if (!fs.existsSync(path.join(root, "pxt_modules"))) {
+        await runAsync(TOOLS.npx, ["pxt", "target", "microbit"], root, onLog);
+    }
+    await runAsync(TOOLS.npx, ["pxt", "install"], root, onLog);
+    await runAsync(TOOLS.npx, ["pxt", "build", "--hw", "v2"], root, onLog);
 
     const dest = path.join(buildFolder, `${path.basename(tsFile, ".ts")}-v2.hex`);
-    fs.copyFileSync(path.join(BUILT, "mbcodal-binary.hex"), dest);
+    fs.copyFileSync(path.join(root, "built", "mbcodal-binary.hex"), dest);
     return { folder: buildFolder, hex: dest };
 }
 
 async function buildPython(pyFile, onLog) {
-    const PATHS = getPaths();
-    const buildFolder = createBuildFolder(pyFile);
-    const log = msg => onLog(msg);
+    const root = ensureRoot(".py");
+    const buildFolder = makeOutDir(root, pyFile);
 
-    log("🔨 Building MicroPython...");
+    onLog("🔨 Building MicroPython...\n");
+    // Same call as the original: -o takes the output folder
+    await runAsync(TOOLS.py2hex, [pyFile, "-o", buildFolder], root, onLog);
+
     const outHex = path.join(buildFolder, `${path.basename(pyFile, ".py")}.hex`);
-
-    log(PATHS.py2hex);
-    await runAsync(PATHS.py2hex, [pyFile, "-o", buildFolder], ROOT, log);
+    if (!fs.existsSync(outHex)) {
+        throw new Error(`py2hex finished but ${outHex} was not created.`);
+    }
     return { folder: buildFolder, hex: outHex };
 }
 
 async function buildCpp(src, onLog) {
-    const PATHS = getPaths();
-    const buildFolder = createBuildFolder(src);
-    const CPP_ROOT = path.join(getBaseResources(), "C++");
-    const log = msg => onLog(msg);
+    const ext = path.extname(src).toLowerCase();
+    const root = ensureRoot(ext);
+    const buildFolder = makeOutDir(root, src);
+    const codal = process.env.MB_CODAL_DIR || path.join(root, "codal-microbit-v2");
 
-    log("🔨 Building C++ (CODAL)...");
+    onLog("🔨 Building C++ (CODAL)...\n");
 
-    process.env.CODAL_CMAKE = PATHS.cmake;
-    process.env.CODAL_NINJA = PATHS.ninja;
-    process.env.CODAL_ARM_GCC = path.join(CPP_ROOT, "toolchain", "arm-gcc", "bin");
+    // first C++ build: fetch CODAL into the C++ root (needs git + network)
+    if (!fs.existsSync(codal)) {
+        onLog("Cloning codal-microbit-v2 (first run)...\n");
+        await runAsync(TOOLS.git, ["clone", CODAL_REPO, codal], root, onLog);
+    }
 
-    await runAsync(PATHS.python, ["build.py"], path.join(CPP_ROOT, "microbit"), log);
+    // cmake, ninja and arm-none-eabi-gcc are expected on PATH
+    fs.copyFileSync(src, path.join(codal, "source", "main.cpp"));
+    await runAsync(TOOLS.python, ["build.py"], codal, onLog);
 
-    const outHex = path.join(CPP_ROOT, "microbit", "MICROBIT.hex");
-    const dest = path.join(buildFolder, `${path.basename(src, ".cpp")}.hex`);
-    fs.copyFileSync(outHex, dest);
-
+    const dest = path.join(buildFolder, `${path.basename(src, ext)}.hex`);
+    fs.copyFileSync(path.join(codal, "MICROBIT.hex"), dest);
     return { folder: buildFolder, hex: dest };
 }
 
-async function build(file, onLog) {
-    // Ensure onLog is always a function
-    if (typeof onLog !== 'function') {
-        onLog = console.log();
-    }
+// Builds run one at a time, since each root has shared working files
+let chain = Promise.resolve();
+
+function build(file, onLog) {
+    if (typeof onLog !== "function") onLog = console.log;
 
     const ext = path.extname(file).toLowerCase();
-    if (ext === ".ts") return await buildTS(file, onLog);
-    if (ext === ".py") return await buildPython(file, onLog);
-    if (ext === ".cpp" || ext === ".c") return await buildCpp(file, onLog);
-    throw new Error("Unsupported file type: " + ext);
+    const job = () => {
+        if (ext === ".ts") return buildTS(file, onLog);
+        if (ext === ".py") return buildPython(file, onLog);
+        if (ext === ".cpp" || ext === ".c") return buildCpp(file, onLog);
+        throw new Error("Unsupported file type: " + ext);
+    };
+    const p = chain.then(job);
+    chain = p.catch(() => {});
+    return p;
 }
 
-module.exports = { build };
+module.exports = { init, build };

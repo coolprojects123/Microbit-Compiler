@@ -1,1 +1,0 @@
-^Cannot print array twice$

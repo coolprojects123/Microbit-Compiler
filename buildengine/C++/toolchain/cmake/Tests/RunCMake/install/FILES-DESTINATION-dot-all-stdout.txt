@@ -1,2 +1,0 @@
--- Installing: [^
-]+/Tests/RunCMake/install/FILES-DESTINATION-dot-build/root-all/empty\.c

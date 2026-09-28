@@ -1,4 +1,0 @@
-# pulse
-
-The Pulse library.
-

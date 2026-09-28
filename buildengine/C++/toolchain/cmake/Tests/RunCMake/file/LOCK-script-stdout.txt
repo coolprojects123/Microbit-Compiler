@@ -1,3 +1,0 @@
--- File locked in script
--- File locked in include
--- File locked in script with include

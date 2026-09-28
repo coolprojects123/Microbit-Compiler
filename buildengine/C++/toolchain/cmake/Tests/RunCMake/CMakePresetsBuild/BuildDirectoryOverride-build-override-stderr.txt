@@ -1,4 +1,0 @@
-^CMake Error: Could not read presets from [^
-]*/Tests/RunCMake/build2:
-File not found: [^
-]*/Tests/RunCMake/build2/CMakePresets.json$

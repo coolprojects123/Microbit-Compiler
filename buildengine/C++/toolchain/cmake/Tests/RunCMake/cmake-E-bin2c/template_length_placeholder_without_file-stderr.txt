@@ -1,3 +1,0 @@
-^Cannot use --template-length-placeholder without --template-file
-
-bin2c Usage: -E bin2c \[<options>\.\.\.\] \[--\] \[<input-file> \[<output-file>\]\]$

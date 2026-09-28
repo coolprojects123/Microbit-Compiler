@@ -1,4 +1,0 @@
-# music
-
-The music library.
-

@@ -1,4 +1,0 @@
-include(Common.cmake)
-test_target_property(INCLUDE_DIRECTORIES)
-test_directory_property(INCLUDE_DIRECTORIES)
-test_file_set_property(INCLUDE_DIRECTORIES)

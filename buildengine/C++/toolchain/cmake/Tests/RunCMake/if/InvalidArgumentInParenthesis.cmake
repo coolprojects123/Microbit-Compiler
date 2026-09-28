@@ -1,5 +1,0 @@
-if((A B) OR ("$ENV{NOT_AN_ENV_VARIABLE}"))
-  message(STATUS "Invalid evaluated to TRUE")
-else()
-  message(STATUS "Invalid evaluated to FALSE")
-endif()

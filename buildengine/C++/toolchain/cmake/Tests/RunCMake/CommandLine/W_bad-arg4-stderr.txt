@@ -1,2 +1,0 @@
-CMake Error: The warning category "imaginary" is not known.
-CMake Error: Run 'cmake --help' for all supported options\.

@@ -1,5 +1,0 @@
-set(MY_VAR "hello")
-set(MY_LIST a b c d)
-message(STATUS "VAR: ${MY_VAR}")
-list(LENGTH MY_LIST len)
-message(STATUS "Length: ${len}")

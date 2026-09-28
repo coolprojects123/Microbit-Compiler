@@ -1,5 +1,0 @@
-enable_testing()
-add_test(testa ${CMAKE_COMMAND} -E echo testa)
-add_test(testb ${CMAKE_COMMAND} -E echo testb)
-add_test(testc ${CMAKE_COMMAND} -E echo testc)
-add_test(testd ${CMAKE_COMMAND} -E echo testd)

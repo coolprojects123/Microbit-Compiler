@@ -1,3 +1,0 @@
--- File locked before include
--- File locked in include
--- File locked after include

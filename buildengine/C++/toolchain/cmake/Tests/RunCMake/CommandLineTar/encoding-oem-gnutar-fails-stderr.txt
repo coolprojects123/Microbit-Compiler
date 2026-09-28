@@ -1,6 +1,0 @@
-^CMake Error: archive_write_header: Can't translate [Pp]athname( '[^']*\.txt')? to [^
-]*
-CMake Error: Problem creating tar:
-[^
-]*/bad\.tar
-CMake Error at roundtrip\.cmake:[0-9]+ \(message\):

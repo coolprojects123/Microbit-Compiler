@@ -1,2 +1,0 @@
-CMake Error at DuplicateSbom\.cmake:[0-9]+ \(export\):
-  export SBOM command already specified for the file mySbom\.spdx\.json\.

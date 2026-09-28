@@ -1,3 +1,0 @@
-^CMake Error: Could not read presets from [^
-]*/Tests/RunCMake/CMakePresets/PackageInvalidInheritance:
-Invalid package preset: "InvalidInheritance": Could not find inherited preset "NoExist"$

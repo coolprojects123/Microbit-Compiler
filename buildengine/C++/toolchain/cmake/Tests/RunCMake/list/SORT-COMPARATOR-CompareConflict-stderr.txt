@@ -1,4 +1,0 @@
-^CMake Error at SORT-COMPARATOR-CompareConflict\.cmake:10 \(list\):
-  list sub-command SORT option "COMPARATOR" is incompatible with "COMPARE"\.
-Call Stack \(most recent call first\):
-  CMakeLists\.txt:3 \(include\)$

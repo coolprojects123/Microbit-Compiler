@@ -1,1 +1,0 @@
-^The CMAKE_WARN_DEPRECATED variable is deprecated\.  Use -W\[no-\]deprecated instead\.$

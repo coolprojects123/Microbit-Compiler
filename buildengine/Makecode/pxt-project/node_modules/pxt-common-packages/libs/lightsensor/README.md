@@ -1,4 +1,0 @@
-# lightsensor
-
-The lightsensor library.
-

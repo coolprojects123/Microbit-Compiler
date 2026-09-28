@@ -1,5 +1,0 @@
-function(test3)
-  set(ARGC bad)
-  cmake_parse_arguments(PARSE_ARGN pref "" "" "")
-endfunction()
-test3()

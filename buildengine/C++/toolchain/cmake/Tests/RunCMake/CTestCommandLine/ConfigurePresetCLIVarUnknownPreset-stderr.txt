@@ -1,2 +1,0 @@
-^Cannot find file: .*/DartConfiguration\.tcl
-No such configure preset in .*: "nonexistent-preset"$

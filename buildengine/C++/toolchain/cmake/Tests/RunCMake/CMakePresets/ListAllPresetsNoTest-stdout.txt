@@ -1,7 +1,0 @@
-^Available configure presets:
-
-  "default"
-
-Available build presets:
-
-  "default"$

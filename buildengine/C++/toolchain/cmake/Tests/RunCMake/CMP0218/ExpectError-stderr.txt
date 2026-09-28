@@ -1,1 +1,0 @@
-^The CMAKE_ERROR_DEPRECATED variable is deprecated\.  Use -W\[no-\]error=deprecated instead\.$

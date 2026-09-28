@@ -1,2 +1,0 @@
-^CMake Error:
-  Presets are not supported in CMake script mode\.$

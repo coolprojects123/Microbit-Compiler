@@ -1,4 +1,0 @@
-# cable
-
-The Cable library.
-

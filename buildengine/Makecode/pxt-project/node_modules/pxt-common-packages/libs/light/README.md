@@ -1,4 +1,0 @@
-# neopixel
-
-The neopixel library.
-

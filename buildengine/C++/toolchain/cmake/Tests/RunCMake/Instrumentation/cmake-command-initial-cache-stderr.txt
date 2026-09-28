@@ -1,3 +1,0 @@
-^CMake Error at [^
-]*/initial\.cmake:1 \(cmake_instrumentation\):
-  Cannot invoke cmake_instrumentation\(\) within an initial cache file.$

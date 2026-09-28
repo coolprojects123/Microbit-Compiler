@@ -1,3 +1,0 @@
-add_library(FOO INTERFACE)
-
-get_property(FOO FILE_SET FOO TARGET FOO PROPERTY FOO)

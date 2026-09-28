@@ -1,5 +1,0 @@
-function(test2)
-  unset(_FUNCTION_ARGNC)
-  cmake_parse_arguments(PARSE_ARGN pref "" "" "")
-endfunction()
-test2()

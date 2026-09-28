@@ -1,4 +1,0 @@
-# temperature
-
-The temperature library.
-

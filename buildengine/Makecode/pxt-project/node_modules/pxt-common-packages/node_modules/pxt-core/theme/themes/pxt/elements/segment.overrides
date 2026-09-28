@@ -1,7 +1,0 @@
-/*******************************
-         Site Overrides
-*******************************/
-
-.ui.transparent.segment {
-    background-color: unset;
-}

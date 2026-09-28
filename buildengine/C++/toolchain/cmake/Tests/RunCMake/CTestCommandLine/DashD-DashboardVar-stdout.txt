@@ -1,1 +1,0 @@
-.*Build name: cli-build-name.*

@@ -1,2 +1,0 @@
-^CMake Error: No file specified for --presets-file
-CMake Error: Run 'cmake --help' for all supported options\.$

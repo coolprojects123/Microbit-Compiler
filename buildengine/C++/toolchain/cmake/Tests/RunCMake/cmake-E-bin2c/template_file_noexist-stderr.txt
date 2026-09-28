@@ -1,1 +1,0 @@
-^Could not open template file for reading: "noexist.c.in.txt"$

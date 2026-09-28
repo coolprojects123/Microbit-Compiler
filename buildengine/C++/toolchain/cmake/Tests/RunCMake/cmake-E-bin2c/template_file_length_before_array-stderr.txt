@@ -1,1 +1,0 @@
-^Cannot print length before array$

@@ -1,4 +1,0 @@
-.*swiftc(\.exe)?"?[^
-]* -Xlinker -pdb:[^
-]*SwiftPDBCustom\.pdb[^
-]*

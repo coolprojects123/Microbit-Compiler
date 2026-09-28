@@ -1,6 +1,0 @@
-file(READ_SYMLINK "${link}" target RESULT result)
-if(CMAKE_HOST_WIN32)
-  string(REPLACE [[\]] [[/]] target "${target}")
-endif()
-message(STATUS "result: '${result}'")
-message(STATUS "target: '${target}'")

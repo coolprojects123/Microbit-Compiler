@@ -1,1 +1,0 @@
-^bin2c Usage: -E bin2c \[<options>\.\.\.\] \[--\] \[<input-file> \[<output-file>\]\]$

@@ -1,4 +1,0 @@
-^CMake Error at FILTER-PREDICATE-TooManyArguments\.cmake:6 \(list\):
-  list sub-command FILTER, mode PREDICATE requires five arguments\.
-Call Stack \(most recent call first\):
-  CMakeLists\.txt:3 \(include\)$
