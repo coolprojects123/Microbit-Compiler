@@ -1,88 +1,12 @@
 {
-  "name": "Microbit-Compiler",
-  "version": "1.0.0",
-  "description": "Full Compiler GUI with support for building TS (Makecode), Python and C++ (CODAL) code for Micro:bit",
-  "homepage": "https://github.com",
-  "author": {
-    "name": "Akhilesh Gollapudi",
-    "email": "akhilesh.gollapudi@outlook.com"
-  },
-  "main": "./gui/main.js",
+  "name": "microbit-compiler-tauri",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
-    "start": "electron .",
-    "pack": "electron-builder --dir",
-    "dist:linux": "electron-builder --linux --publish always",
-    "dist:linux:debian": "electron-builder --linux deb --publish always",
-    "dist:linux:fedora": "electron-builder --linux rpm --publish always",
-    "dist:linux:tar": "electron-builder --linux tar.gz --publish always",
-    "dist:win": "electron-builder --windows --publish always"
-  },
-  "dependencies": {
-    "electron-updater": "^6.3.9",
-    "electron-log": "^5.2.4"
+    "dev": "tauri dev",
+    "build": "tauri build"
   },
   "devDependencies": {
-    "electron": "^42.5.0",
-    "electron-builder": "^26.15.3"
-  },
-  "build": {
-    "appId": "com.compiler.microbit",
-    "productName": "Micro:bit Compiler",
-    "copyright": "Copyright © 2026 Akhilesh Gollapudi",
-    "directories": {
-      "output": "dist",
-      "buildResources": "assets"
-    },
-    "files": [
-      "gui/**/*",
-      "buildengine/**/*",
-      "assets/**/*",
-      "package.json",
-      "compiler.js",
-      "flash.js"
-    ],
-    "extraResources": [
-      {
-        "from": "buildengine/MPython/compilerVenv/",
-        "to": "resources/compilerVenv/",
-        "filter": ["**/*"]
-      },
-      {
-        "from": "buildengine/C++/toolchain/bin_dist/",
-        "to": "resources/toolchain/",
-        "filter": ["**/*"]
-      }
-    ],
-    "asar": true,
-    "asarUnpack": [
-      "resources/**"
-    ],
-    "icon": "assets/icon.png",
-    "publish": {
-      "provider": "github",
-      "owner": "ahk4918",
-      "repo": "microbit-compiler"
-    },
-    "win": {
-      "target": "nsis",
-      "icon": "assets/icon.ico",
-      "requestedExecutionLevel": "asInvoker"
-    },
-    "linux": {
-      "target": ["deb", "rpm", "tar.gz"],
-      "icon": "assets/icon.png",
-      "category": "Development",
-      "maintainer": "Akhilesh Gollapudi <akhilesh.gollapudi@outlook.com>",
-      "executableName": "microbit-compiler"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "installerIcon": "assets/icon.ico",
-      "uninstallerIcon": "assets/icon.ico",
-      "installerHeaderIcon": "assets/icon.ico",
-      "createStartMenuShortcut": true,
-      "shortcutName": "Micro:bit Compiler"
-    }
+    "@tauri-apps/cli": "^2.1.0"
   }
 }
