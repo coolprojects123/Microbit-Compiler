@@ -38,22 +38,26 @@ pub async fn run_async(
     let mut out_lines = BufReader::new(stdout).lines();
     let mut err_lines = BufReader::new(stderr).lines();
 
-    loop {
+    // Drain both pipes to EOF first, then wait for the exit status, so the
+    // tail of the output is never dropped and we never spin on a closed pipe.
+    let mut out_done = false;
+    let mut err_done = false;
+    while !(out_done && err_done) {
         tokio::select! {
-            line = out_lines.next_line() => {
-                match line { Ok(Some(l)) => on_data(&l), Ok(None) => {}, Err(_) => {} }
+            line = out_lines.next_line(), if !out_done => {
+                match line { Ok(Some(l)) => on_data(&l), _ => out_done = true }
             }
-            line = err_lines.next_line() => {
-                match line { Ok(Some(l)) => on_data(&l), Ok(None) => {}, Err(_) => {} }
-            }
-            status = child.wait() => {
-                let status = status.map_err(|e| e.to_string())?;
-                if status.success() {
-                    return Ok(());
-                }
-                return Err(format!("{cmd} exited with code {}", status.code().unwrap_or(-1)));
+            line = err_lines.next_line(), if !err_done => {
+                match line { Ok(Some(l)) => on_data(&l), _ => err_done = true }
             }
         }
+    }
+
+    let status = child.wait().await.map_err(|e| e.to_string())?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!("{cmd} exited with code {}", status.code().unwrap_or(-1)))
     }
 }
 

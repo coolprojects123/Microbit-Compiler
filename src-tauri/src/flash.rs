@@ -44,15 +44,6 @@ fn search_block_devices(devices: &serde_json::Value) -> Option<PathBuf> {
     None
 }
 
-fn can_flash(drive: &Path) -> bool {
-    let test_file = drive.join(".tmp_flash_check");
-    if std::fs::write(&test_file, "test").is_err() {
-        return false;
-    }
-    std::fs::remove_file(&test_file).ok();
-    true
-}
-
 pub fn flash(hex_path: &Path) -> Result<String, String> {
     if !hex_path.is_file() {
         return Err(format!("HEX not found: {}", hex_path.display()));
@@ -61,14 +52,16 @@ pub fn flash(hex_path: &Path) -> Result<String, String> {
     let drive = find_microbit_drive()
         .ok_or_else(|| "No micro:bit detected. Check connection and mount status.".to_string())?;
 
-    if !can_flash(&drive) {
-        return Err("Drive is not writable. Please check permissions.".to_string());
-    }
-
     let file_name = hex_path.file_name().ok_or("Invalid hex path")?;
     let dest = drive.join(file_name);
 
-    std::fs::copy(hex_path, &dest).map_err(|e| format!("Flash failed: {e}"))?;
+    std::fs::copy(hex_path, &dest).map_err(|e| {
+        if e.kind() == std::io::ErrorKind::PermissionDenied {
+            "Drive is not writable. Please check permissions.".to_string()
+        } else {
+            format!("Flash failed: {e}")
+        }
+    })?;
 
     // Force the OS to commit the write to hardware (important for reliable
     // flashing on Linux). The micro:bit reboots as soon as the hex is fully

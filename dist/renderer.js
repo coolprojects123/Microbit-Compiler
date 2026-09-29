@@ -440,6 +440,101 @@ async function openBuild(folder) {
     buildViewer.appendChild(area);
 }
 
+// ===== AUTO-UPDATE =====
+const checkUpdateBtn = document.getElementById("check-update");
+const updateModal = document.getElementById("update-modal");
+const updateMessage = document.getElementById("update-message");
+const updateDetail = document.getElementById("update-detail");
+const updateNotes = document.getElementById("update-notes");
+const updateProgress = document.getElementById("update-progress");
+const updateProgressBar = document.getElementById("update-progress-bar");
+const updateInstall = document.getElementById("update-install");
+const updateLater = document.getElementById("update-later");
+
+let updateInstalling = false;
+let updatePending = null;
+
+function showUpdate(info) {
+    if (updateModal.classList.contains("open")) return; // already showing one
+    updatePending = info;
+
+    updateMessage.textContent = `Version ${info.version} is available.`;
+    updateDetail.textContent = `You are running ${info.current}. The app restarts after updating.`;
+    updateNotes.textContent = info.notes || "";
+    updateProgress.classList.remove("active");
+    updateProgressBar.style.width = "0";
+    updateInstall.textContent = "Update now";
+    updateInstall.disabled = false;
+    updateLater.disabled = false;
+
+    updateModal.classList.add("open");
+    updateInstall.focus();
+}
+
+function closeUpdate() {
+    if (updateInstalling) return; // can't cancel mid-install
+    updateModal.classList.remove("open");
+}
+
+updateInstall.onclick = async () => {
+    if (updateInstalling || !updatePending) return;
+    updateInstalling = true;
+    updateInstall.disabled = true;
+    updateLater.disabled = true;
+    updateInstall.textContent = "Downloading...";
+    updateProgress.classList.add("active");
+    log(`${c.yellow(`⬇ Downloading update`)} ${updatePending.version}...`);
+
+    try {
+        await window.api.installUpdate();
+        // The app restarts on success, so getting here means nothing was installed.
+        updateInstalling = false;
+        updateModal.classList.remove("open");
+        log(`${c.green(`✔ Already up to date`)}`);
+    } catch (err) {
+        updateInstalling = false;
+        updateDetail.textContent = `Update failed: ${err}`;
+        updateInstall.textContent = "Retry";
+        updateInstall.disabled = false;
+        updateLater.disabled = false;
+        updateProgress.classList.remove("active");
+        log(`${c.red(`❌ Update failed: ${err}`)}`);
+    }
+};
+
+updateLater.onclick = closeUpdate;
+document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && updateModal.classList.contains("open")) closeUpdate();
+});
+
+checkUpdateBtn.onclick = async () => {
+    checkUpdateBtn.disabled = true;
+    try {
+        const info = await window.api.checkUpdate();
+        if (info) showUpdate(info);
+        else log(`${c.green(`✔ You're up to date`)}`);
+    } catch (err) {
+        log(`${c.red(`❌ Update check failed: ${err}`)}`);
+    } finally {
+        checkUpdateBtn.disabled = false;
+    }
+};
+
+window.api.onUpdateAvailable(showUpdate);
+
+window.api.onUpdateProgress(([downloaded, total]) => {
+    if (!total) return;
+    const pct = Math.min(100, Math.round((downloaded / total) * 100));
+    updateProgressBar.style.width = pct + "%";
+    updateInstall.textContent = `Downloading ${pct}%`;
+});
+
+window.api.onUpdateInstalled(() => {
+    updateProgressBar.style.width = "100%";
+    updateInstall.textContent = "Installing...";
+    log(`${c.green(`✔ Update downloaded, installing...`)}`);
+});
+
 // ===== INITIALIZATION =====
 (async () => {
     log(`${c.green(`✔ Micro:bit Compiler Studio ready`)}`);

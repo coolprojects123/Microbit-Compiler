@@ -4,6 +4,7 @@ use crate::state::AppState;
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 use tauri::{AppHandle, Emitter, State};
+use tauri_plugin_updater::UpdaterExt;
 
 /// The renderer may only read, list, delete, or flash files inside the builds
 /// folder — mirrors assertInBuilds() in the old main.js. Prevents a
@@ -151,4 +152,73 @@ pub fn delete_build(state: State<'_, AppState>, folder: String) -> Result<bool, 
     let p = assert_in_builds(&state, &folder)?;
     std::fs::remove_dir_all(p).map_err(|e| e.to_string())?;
     Ok(true)
+}
+
+#[derive(Serialize, Clone)]
+pub struct UpdateInfo {
+    version: String,
+    current: String,
+    notes: Option<String>,
+}
+
+/// Returns Some(info) when a newer release is published, None when up to date.
+#[tauri::command]
+pub async fn check_update(app: AppHandle) -> Result<Option<UpdateInfo>, String> {
+    // On Linux only AppImage installs can replace themselves; .deb/.rpm users
+    // update through their package manager, so don't offer them an update
+    // that can't be installed.
+    if cfg!(target_os = "linux") && std::env::var_os("APPIMAGE").is_none() {
+        return Ok(None);
+    }
+    let update = app
+        .updater()
+        .map_err(|e| e.to_string())?
+        .check()
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(update.map(|u| UpdateInfo {
+        version: u.version.clone(),
+        current: u.current_version.clone(),
+        notes: u.body.clone(),
+    }))
+}
+
+/// Downloads and installs the pending update, emitting "update-progress"
+/// ([downloaded, total]) and "update-installed", then restarts the app.
+#[tauri::command]
+pub async fn install_update(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    // Never replace the app mid-build; holding the lock also blocks new builds.
+    let _guard = state
+        .build_lock
+        .try_lock()
+        .map_err(|_| "A build is running. Try again when it finishes.".to_string())?;
+
+    let Some(update) = app
+        .updater()
+        .map_err(|e| e.to_string())?
+        .check()
+        .await
+        .map_err(|e| e.to_string())?
+    else {
+        return Ok(());
+    };
+
+    let mut downloaded: u64 = 0;
+    let progress_app = app.clone();
+    let done_app = app.clone();
+    update
+        .download_and_install(
+            move |chunk, total| {
+                downloaded += chunk as u64;
+                let _ = progress_app.emit("update-progress", (downloaded, total));
+            },
+            move || {
+                let _ = done_app.emit("update-installed", ());
+            },
+        )
+        .await
+        .map_err(|e| e.to_string())?;
+
+    // On Windows the installer takes over and the app exits before this point.
+    app.restart()
 }

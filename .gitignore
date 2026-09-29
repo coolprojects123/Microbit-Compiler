@@ -1,2 +1,30 @@
-node_modules/
+# Rust / Tauri build output
 src-tauri/target/
+target/
+src-tauri/gen/schemas/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Updater signing keys: NEVER commit these
+*.key
+*.key.pub.bak
+.tauri/
+
+# Secrets / local env
+.env
+.env.*
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Stored Secrets
+secrets.txt

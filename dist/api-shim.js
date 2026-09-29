@@ -22,5 +22,11 @@
         listBuildFiles: (folder) => invoke("list_build_files", { folder }),
         readFile: (file) => invoke("read_file", { filePath: file }),
         deleteBuild: (folder) => invoke("delete_build", { folder }),
+
+        checkUpdate: () => invoke("check_update"),
+        installUpdate: () => invoke("install_update"),
+        onUpdateAvailable: (cb) => listen("update-available", (e) => cb(e.payload)),
+        onUpdateProgress: (cb) => listen("update-progress", (e) => cb(e.payload)),
+        onUpdateInstalled: (cb) => listen("update-installed", () => cb()),
     };
 })();

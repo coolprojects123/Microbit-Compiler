@@ -439,6 +439,15 @@ fn extract_zip(archive: &Path, dest: &Path, strip: u32) -> Result<(), String> {
     Ok(())
 }
 
+fn strip_components(path: &Path, strip: u32) -> PathBuf {
+    path.components().skip(strip as usize).collect()
+}
+
+fn is_safe_relative(path: &Path) -> bool {
+    use std::path::Component;
+    path.components().all(|c| matches!(c, Component::Normal(_) | Component::CurDir))
+}
+
 /// Shared by .tar.gz (flate2) and .tar.xz (xz2) — both just hand us a
 /// decompressing Read that tar::Archive can walk.
 fn extract_tar(decompressed: impl std::io::Read, dest: &Path, strip: u32) -> Result<(), String> {
@@ -446,15 +455,38 @@ fn extract_tar(decompressed: impl std::io::Read, dest: &Path, strip: u32) -> Res
     for entry in tar.entries().map_err(|e| e.to_string())? {
         let mut entry = entry.map_err(|e| e.to_string())?;
         let path = entry.path().map_err(|e| e.to_string())?.into_owned();
-        let stripped: PathBuf = path.components().skip(strip as usize).collect();
-        if stripped.as_os_str().is_empty() {
+        let stripped = strip_components(&path, strip);
+        if stripped.as_os_str().is_empty() || !is_safe_relative(&stripped) {
             continue;
         }
         let out_path = dest.join(&stripped);
         if let Some(parent) = out_path.parent() {
             std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
         }
-        entry.unpack(&out_path).map_err(|e| e.to_string())?;
+
+        if entry.header().entry_type().is_hard_link() {
+            // The link target is stored with the archive's top-level folder
+            // still on it, so strip it the same way as the entry path.
+            let target = entry
+                .link_name()
+                .map_err(|e| e.to_string())?
+                .ok_or("hard link entry has no target")?
+                .into_owned();
+            let target = strip_components(&target, strip);
+            if !is_safe_relative(&target) {
+                continue;
+            }
+            let src = dest.join(&target);
+            std::fs::remove_file(&out_path).ok(); // in case of a leftover
+            if std::fs::hard_link(&src, &out_path).is_err() {
+                // Fall back to a plain copy (e.g. filesystem without hard links)
+                std::fs::copy(&src, &out_path).map_err(|e| {
+                    format!("Could not link {} -> {}: {e}", out_path.display(), src.display())
+                })?;
+            }
+        } else {
+            entry.unpack(&out_path).map_err(|e| e.to_string())?;
+        }
     }
     Ok(())
 }

@@ -58,11 +58,16 @@
         .btn.primary { color: var(--bg); background: var(--green); border-color: var(--green); font-weight: 700; }
         .btn.primary:hover { filter: brightness(1.1); }
         .btn.danger { color: var(--red); }
+        .btn:disabled { opacity: 0.5; cursor: default; }
+        .btn:disabled:hover { background: transparent; border-color: var(--border); }
+        .btn.primary:disabled:hover { background: var(--green); border-color: var(--green); filter: none; }
         .btn.small { height: 24px; padding: 0 8px; font-size: 12px; }
         .btn.small .material-icons { font-size: 16px; }
 
         /* ---------- sidebar ---------- */
         #sidebar {
+            display: flex;
+            flex-direction: column;
             width: 180px;
             flex-shrink: 0;
             background: var(--panel);
@@ -260,6 +265,24 @@
         }
         .modal-message { margin-bottom: 6px; font-size: 14px; }
         .modal-detail { color: var(--dim); }
+        .sidebar-foot { margin-top: auto; padding: 8px; border-top: 1px solid var(--border); }
+
+        .update-notes {
+            max-height: 140px;
+            overflow: auto;
+            margin-top: 10px;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            background: var(--bg);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .update-notes:empty { display: none; }
+        .update-progress { display: none; height: 4px; margin-top: 14px; background: var(--border); overflow: hidden; }
+        .update-progress.active { display: block; }
+        #update-progress-bar { width: 0; height: 100%; background: var(--green); }
+
         .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
     </style>
 </head>
@@ -278,6 +301,12 @@
                 <span class="material-icons">history</span>History
             </button>
         </nav>
+
+        <div class="sidebar-foot">
+            <button class="nav-btn" id="check-update">
+                <span class="material-icons">system_update_alt</span>Updates
+            </button>
+        </div>
     </aside>
 
     <div id="main">
@@ -351,6 +380,23 @@
                 <div class="modal-actions">
                     <button class="btn" id="approval-cancel">Cancel</button>
                     <button class="btn primary" id="approval-confirm">Install</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UPDATE MODAL -->
+    <div id="update-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="update-title">
+        <div class="modal-box">
+            <div class="panel-head" id="update-title">Update available</div>
+            <div class="panel-body">
+                <div class="modal-message" id="update-message"></div>
+                <div class="modal-detail" id="update-detail"></div>
+                <div class="update-notes" id="update-notes"></div>
+                <div class="update-progress" id="update-progress"><div id="update-progress-bar"></div></div>
+                <div class="modal-actions">
+                    <button class="btn" id="update-later">Later</button>
+                    <button class="btn primary" id="update-install">Update now</button>
                 </div>
             </div>
         </div>
