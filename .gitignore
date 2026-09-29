@@ -3,6 +3,9 @@ src-tauri/target/
 target/
 src-tauri/gen/schemas/
 
+# What is buildengine doing here
+buildengine/
+
 # Node
 node_modules/
 npm-debug.log*
