@@ -41,6 +41,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      # The cache restores src-tauri/target, including installers from older
+      # builds. Wipe them so only this build's bundles get uploaded.
+      - name: Clean old bundles
+        shell: bash
+        run: rm -rf src-tauri/target/release/bundle
+
       # createUpdaterArtifacts is on, so every build must be able to sign.
       - name: Build Tauri app
         run: npm run build
@@ -96,6 +102,13 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      # The cache restores src-tauri/target, including installers from older
+      # builds. Wipe them so only this build's bundles get uploaded.
+      - name: Clean old bundles
+        shell: bash
+        run: rm -rf src-tauri/target/release/bundle
+
+      # createUpdaterArtifacts is on, so every build must be able to sign.
       - name: Build Tauri app
         run: npm run build
         env:
@@ -167,8 +180,8 @@ jobs:
           VERSION="${TAG#v}"
           BASE="https://github.com/$REPO/releases/download/$TAG"
 
-          WIN=$(find release-files/windows -type f -name '*-setup.exe' | head -n1)
-          LIN=$(find release-files/linux -type f -name '*.AppImage' | head -n1)
+          WIN=$(find release-files/windows -type f -name "*_${VERSION}_*-setup.exe" | head -n1)
+          LIN=$(find release-files/linux -type f -name "*_${VERSION}_*.AppImage" | head -n1)
           for f in "$WIN" "$WIN.sig" "$LIN" "$LIN.sig"; do
             [ -f "$f" ] || { echo "Missing updater file: $f"; exit 1; }
           done
