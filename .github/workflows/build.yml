@@ -19,6 +19,17 @@ jobs:
           node-version: "20"
           cache: npm
 
+      - name: Cache Rust
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: windows-rust-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            windows-rust-
+
       - name: Install dependencies
         run: npm install
 
@@ -44,6 +55,17 @@ jobs:
         with:
           node-version: "20"
           cache: npm
+
+      - name: Cache Rust
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: linux-rust-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            linux-rust-
 
       - name: Install Linux dependencies
         run: |
