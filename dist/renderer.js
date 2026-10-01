@@ -329,6 +329,37 @@ systemDarkMode.addEventListener("change", () => {
     if (appSettings.themeMode === "system") applySettings(appSettings);
 });
 
+async function resolveExamplePath(paths) {
+    const candidates = [...new Set((paths || []).filter(Boolean))];
+    if (!candidates.length) return "";
+
+    const resourceDir = window.__TAURI__?.path?.resourceDir ? await window.__TAURI__.path.resourceDir().catch(() => "") : "";
+    if (resourceDir) {
+        for (const path of candidates) {
+            const raw = path.replace(/\\/g, "/");
+            if (/^[a-zA-Z]:\//.test(raw) || raw.startsWith("/") || raw.startsWith("//")) {
+                continue;
+            }
+            const normalized = raw.replace(/^\.?\/?/, "").replace(/^\.?\.?\//, "");
+            const candidate = `${resourceDir.replace(/[\\/]$/, "")}/${normalized}`.replace(/\/+/g, "/");
+            candidates.push(candidate);
+        }
+    }
+
+    for (const candidate of candidates) {
+        try {
+            if (window.api?.readFile) {
+                await window.api.readFile(candidate);
+            }
+            return candidate;
+        } catch {
+            // keep trying the next path candidate
+        }
+    }
+
+    return candidates[0];
+}
+
 const EXAMPLE_GROUPS = [
     {
         name: "MakeCode",
@@ -631,7 +662,7 @@ function renderExampleChooser() {
                 ? "Radio Ping"
                 : selectedExample;
         const example = group?.items.find(item => item.label === label);
-        const file = example?.paths.find(Boolean);
+        const file = await resolveExamplePath(example?.paths || []);
         if (!example || !file) {
             log(`${c.red("Example not available.")}`);
             return;
