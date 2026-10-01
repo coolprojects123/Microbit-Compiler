@@ -8,17 +8,60 @@
     <link rel="stylesheet" href="vendor/xterm.min.css">
     <style>
         :root {
-            --bg: #0a0c13;
-            --panel: #0e111b;
-            --border: #262b40;
-            --hover: #171b2b;
-            --text: #d6dbf0;
-            --dim: #7a7f9e;
-            --green: #6dd47e;
-            --blue: #4cafef;
-            --yellow: #ffa500;
-            --red: #ff5c5c;
-            --mono: "JetBrains Mono", "Cascadia Mono", "Fira Code", Consolas, monospace;
+            --bg: #f3f5f6;
+            --bg-2: #edf1f3;
+            --panel: #ffffff;
+            --panel-strong: #f8f9fa;
+            --card: #ffffff;
+            --border: #dce2e5;
+            --border-strong: #c5cfd4;
+            --hover: #f0f3f4;
+            --text: #1f2a30;
+            --dim: #5d6b72;
+            --green: #216b56;
+            --blue: #365f83;
+            --cyan: #335f70;
+            --yellow: #85651c;
+            --red: #a44444;
+            --accent-soft: #e8f2ee;
+            --shadow: 0 10px 28px rgba(31, 46, 54, 0.12);
+            --ui-font: "Aptos", "Segoe UI Variable", "Segoe UI", sans-serif;
+            --space-xs: clamp(4px, 0.4vw, 6px);
+            --space-sm: clamp(6px, 0.65vw, 10px);
+            --space-md: clamp(10px, 0.9vw, 16px);
+            --space-lg: clamp(14px, 1.2vw, 22px);
+            --space-xl: clamp(18px, 1.6vw, 30px);
+        }
+
+        :root[data-theme="dark"] {
+            --bg: #171d20;
+            --bg-2: #1e2529;
+            --panel: #222a2f;
+            --panel-strong: #282f33;
+            --card: #242c30;
+            --border: #3a454a;
+            --border-strong: #526168;
+            --hover: #2d363b;
+            --text: #e4e9e7;
+            --dim: #a2b0b3;
+            --yellow: #e2c273;
+            --red: #ee9595;
+            --shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+        }
+
+        :root[data-spacing="compact"] {
+            --space-xs: 3px;
+            --space-sm: 5px;
+            --space-md: 8px;
+            --space-lg: 12px;
+            --space-xl: 16px;
+        }
+        :root[data-spacing="spacious"] {
+            --space-xs: 6px;
+            --space-sm: 10px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
         }
 
         * { box-sizing: border-box; }
@@ -26,7 +69,7 @@
 
         body {
             display: flex;
-            font: 12.5px/1.5 var(--mono);
+            font: 13px/1.5 var(--ui-font);
             color: var(--text);
             background: var(--bg);
             -webkit-font-smoothing: antialiased;
@@ -42,62 +85,66 @@
         .btn {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
-            height: 30px;
-            padding: 0 12px;
+            height: 34px;
+            padding: 0 14px;
             border: 1px solid var(--border);
-            border-radius: 3px;
-            background: transparent;
+            border-radius: 8px;
+            background: var(--panel);
             color: var(--text);
             font: inherit;
             cursor: pointer;
             white-space: nowrap;
+            transition: background 0.15s ease, border-color 0.15s ease;
+            box-shadow: none;
         }
-        .btn:hover { background: var(--hover); border-color: var(--dim); }
+        .btn:hover { background: var(--hover); border-color: var(--border-strong); }
         .btn:focus-visible { outline: 1px solid var(--blue); outline-offset: 1px; }
-        .btn.primary { color: var(--bg); background: var(--green); border-color: var(--green); font-weight: 700; }
-        .btn.primary:hover { filter: brightness(1.1); }
+        .btn.primary { color: var(--panel); background: var(--green); border-color: var(--green); font-weight: 600; }
+        .btn.primary:hover { filter: brightness(0.94); }
         .btn.danger { color: var(--red); }
         .btn:disabled { opacity: 0.5; cursor: default; }
-        .btn:disabled:hover { background: transparent; border-color: var(--border); }
+        .btn:disabled:hover { background: var(--panel); border-color: var(--border); transform: none; }
         .btn.primary:disabled:hover { background: var(--green); border-color: var(--green); filter: none; }
-        .btn.small { height: 24px; padding: 0 8px; font-size: 12px; }
+        .btn.small { height: 28px; padding: 0 10px; font-size: 12px; }
         .btn.small .material-icons { font-size: 16px; }
 
         /* ---------- sidebar ---------- */
         #sidebar {
             display: flex;
             flex-direction: column;
-            width: 180px;
+            width: 200px;
             flex-shrink: 0;
             background: var(--panel);
             border-right: 1px solid var(--border);
         }
-        .brand { padding: 14px 16px; border-bottom: 1px solid var(--border); }
-        .brand-name { color: var(--green); font-weight: 700; }
-        .brand-sub { color: var(--dim); }
+        .brand { padding: var(--space-lg) var(--space-md) var(--space-md); border-bottom: 1px solid var(--border); }
+        .brand-name { color: var(--text); font-weight: 700; font-size: 18px; letter-spacing: 0.04em; }
+        .brand-sub { color: var(--dim); font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase; margin-top: 4px; }
 
-        .nav { padding: 8px; display: flex; flex-direction: column; gap: 2px; }
+        .nav { padding: var(--space-md) var(--space-sm); display: flex; flex-direction: column; gap: var(--space-xs); }
         .nav-btn {
             display: flex;
             align-items: center;
             gap: 10px;
-            height: 32px;
-            padding: 0 10px;
-            border: none;
-            border-left: 2px solid transparent;
+            height: 36px;
+            padding: 0 12px;
+            border: 1px solid transparent;
+            border-radius: 8px;
             background: transparent;
             color: var(--dim);
             font: inherit;
             cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease;
         }
-        .nav-btn:hover { background: var(--hover); color: var(--text); }
-        .nav-btn.active { background: var(--hover); color: var(--green); border-left-color: var(--green); }
+        .nav-btn:hover { background: var(--hover); color: var(--text); border-color: var(--border); }
+        .nav-btn.active { background: var(--accent-soft); color: var(--green); border-color: var(--border); }
 
         /* ---------- main ---------- */
-        #main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-        #content { flex: 1; min-height: 0; display: flex; padding: 12px; }
-        .content-section { display: none; flex: 1; min-width: 0; gap: 12px; }
+        #main { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: var(--space-lg); }
+        #content { flex: 1; min-height: 0; display: flex; }
+        .content-section { display: none; flex: 1; min-width: 0; gap: 14px; }
         .content-section.active { display: flex; }
         #editor-view { flex-direction: column; }
 
@@ -107,51 +154,86 @@
             flex-direction: column;
             min-height: 0;
             border: 1px solid var(--border);
-            border-radius: 4px;
+            border-radius: 6px;
             background: var(--panel);
             overflow: hidden;
+            box-shadow: none;
         }
         .panel.fill { flex: 1; }
         .panel-head {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            min-height: 34px;
-            padding: 2px 8px 2px 14px;
+            min-height: 36px;
+            padding: var(--space-sm) var(--space-md);
             border-bottom: 1px solid var(--border);
             color: var(--dim);
             font-size: 11.5px;
             letter-spacing: 0.08em;
             text-transform: uppercase;
         }
-        .panel-body { padding: 14px; }
+        .panel-body { padding: var(--space-md); }
 
-        .toolbar { flex-direction: row; align-items: center; gap: 10px; padding: 8px 10px; }
+        .toolbar { flex-direction: row; align-items: center; gap: var(--space-sm); padding: var(--space-sm); }
         #file-info {
             flex: 1;
             min-width: 0;
             display: flex;
             align-items: center;
             gap: 8px;
-            height: 30px;
-            padding: 0 10px;
+            height: 34px;
+            padding: 0 12px;
             border: 1px solid var(--border);
-            border-radius: 3px;
-            background: var(--bg);
+            border-radius: 10px;
+            background: var(--panel-strong);
             color: var(--dim);
         }
         #file-name-display { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         #file-size { margin-left: auto; white-space: nowrap; }
 
         /* ---------- console ---------- */
-        #status { flex: 1; min-height: 0; overflow: hidden; background: var(--bg); }
-        #status .xterm { padding: 8px 12px; height: 100%; }
-        #status .xterm-viewport { background-color: transparent !important; }
+        #status {
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+            background: var(--panel);
+            border-top: 1px solid var(--border);
+        }
+        #status .xterm {
+            padding: 10px 12px;
+            height: 100%;
+        }
+        #status .xterm-viewport {
+            background-color: transparent !important;
+        }
+        #status .xterm-screen {
+            background: transparent !important;
+        }
 
         /* ---------- history ---------- */
         .history-list { width: 300px; flex-shrink: 0; }
         .history-detail { flex: 1; min-width: 0; }
         #build-history { flex: 1; overflow: auto; }
+        .history-tools { display: flex; align-items: center; gap: 8px; }
+        .history-count {
+            display: inline-flex;
+            min-width: 22px;
+            height: 20px;
+            align-items: center;
+            justify-content: center;
+            margin-left: 5px;
+            padding: 0 5px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 10px;
+            letter-spacing: 0;
+        }
+        .history-select-all { display: inline-flex; align-items: center; gap: 5px; color: var(--dim); text-transform: none; letter-spacing: 0; }
+        .history-select-all input, .build-select { accent-color: var(--green); }
+        .build-item { user-select: none; }
+        .build-item.marked-for-delete { background: rgba(255, 141, 141, 0.06); }
+        .build-select { width: 15px; height: 15px; margin: 0 2px 0 0; flex-shrink: 0; cursor: pointer; }
 
         .build-item {
             display: flex;
@@ -182,6 +264,21 @@
         }
         .build-viewer-title { color: var(--yellow); word-break: break-all; }
         .build-viewer-actions { display: flex; gap: 6px; flex-shrink: 0; }
+        .build-summary {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: var(--space-sm);
+            margin-bottom: var(--space-md);
+        }
+        .build-metric {
+            min-width: 0;
+            padding: var(--space-sm) var(--space-md);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-2);
+        }
+        .build-metric dt { color: var(--dim); font-size: 10px; text-transform: uppercase; }
+        .build-metric dd { margin: 3px 0 0; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
         .build-file-area { display: flex; gap: 10px; flex: 1; min-height: 0; }
         .build-file-list {
@@ -224,13 +321,16 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 20px;
-            height: 28px;
-            padding: 0 14px;
-            border-top: 1px solid var(--border);
+            gap: var(--space-lg);
+            height: 36px;
+            padding: 0 var(--space-md);
+            margin-top: var(--space-md);
+            border: 1px solid var(--border);
+            border-radius: 12px;
             background: var(--panel);
             color: var(--dim);
             font-size: 12px;
+            box-shadow: none;
         }
         #build-meta { display: flex; align-items: center; gap: 8px; }
         #build-meta::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
@@ -251,17 +351,17 @@
             display: none;
             align-items: center;
             justify-content: center;
-            background: rgba(5, 6, 10, 0.7);
+            background: rgba(31, 42, 48, 0.28);
             z-index: 1000;
         }
         .modal-overlay.open { display: flex; }
         .modal-box {
             width: min(430px, calc(100vw - 32px));
-            border: 1px solid var(--dim);
-            border-radius: 4px;
+            border: 1px solid var(--border-strong);
+            border-radius: 8px;
             background: var(--panel);
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            box-shadow: var(--shadow);
         }
         .modal-message { margin-bottom: 6px; font-size: 14px; }
         .modal-detail { color: var(--dim); }
@@ -284,6 +384,261 @@
         #update-progress-bar { width: 0; height: 100%; background: var(--green); }
 
         .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+
+        .example-modal-box {
+            width: min(760px, calc(100vw - 32px));
+            border: 1px solid var(--border-strong);
+            border-radius: 8px;
+            background: var(--panel);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+        .example-picker {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        .example-row {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        .example-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 58px;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-2);
+            color: var(--text);
+            text-align: center;
+            cursor: pointer;
+            font: inherit;
+            transition: background-color 0.15s ease, border-color 0.15s ease;
+            box-shadow: none;
+        }
+        .example-btn:hover {
+            background: var(--panel);
+            border-color: var(--border-strong);
+        }
+        .example-btn[aria-pressed="true"] {
+            background: var(--accent-soft);
+            border-color: var(--green);
+            color: var(--green);
+        }
+        .example-btn:disabled {
+            opacity: 0.45;
+            cursor: default;
+            transform: none;
+        }
+        .example-load-row {
+            display: flex;
+            justify-content: flex-end;
+            padding-top: 4px;
+        }
+        .example-btn.format {
+            background: var(--panel);
+            color: var(--cyan);
+            border-color: var(--border-strong);
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .example-btn.format[aria-pressed="true"] {
+            background: var(--accent-soft);
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+            width: 100%;
+        }
+        .settings-card {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--card);
+        }
+        .settings-card h3 {
+            margin: 0;
+            font-size: 12px;
+            color: var(--cyan);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            min-height: 34px;
+        }
+        .setting-label {
+            color: var(--text);
+        }
+        .setting-sub {
+            color: var(--dim);
+            font-size: 11px;
+            margin-top: 2px;
+        }
+        .toggle {
+            position: relative;
+            width: 42px;
+            height: 24px;
+            border-radius: 999px;
+            background: rgba(148, 163, 184, 0.18);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.15s ease;
+            flex-shrink: 0;
+        }
+        .toggle::after {
+            content: "";
+            position: absolute;
+            top: 2px;
+            left: 3px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #ffffff;
+            transition: transform 0.15s ease;
+        }
+        .toggle.on {
+            background: var(--accent-soft);
+            border-color: var(--border-strong);
+        }
+        .toggle.on::after {
+            transform: translateX(17px);
+            background: var(--green);
+        }
+        .setting-select {
+            width: 100%;
+            height: 34px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--panel);
+            color: var(--text);
+            padding: 0 10px;
+            font: inherit;
+        }
+
+        .settings-modal-box {
+            width: min(980px, calc(100vw - 32px));
+            border: 1px solid var(--border-strong);
+            border-radius: 8px;
+            background: var(--panel);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        .settings-shell {
+            display: grid;
+            grid-template-columns: 180px 1fr;
+            min-height: 510px;
+        }
+        .settings-sidebar {
+            padding: var(--space-md) var(--space-sm);
+            border-right: 1px solid var(--border);
+            background: var(--bg-2);
+        }
+        .settings-tab {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            background: transparent;
+            color: var(--text);
+            text-align: left;
+            font: inherit;
+            cursor: pointer;
+            transition: all 0.18s ease;
+        }
+        .settings-tab + .settings-tab {
+            margin-top: 8px;
+        }
+        .settings-tab.active {
+            background: var(--accent-soft);
+            border-color: var(--border-strong);
+            color: var(--green);
+        }
+        .settings-tab .material-icons { color: var(--dim); }
+        .settings-tab.active .material-icons { color: var(--green); }
+        .settings-content {
+            display: none;
+            padding: var(--space-lg);
+        }
+        .settings-content.active {
+            display: block;
+        }
+        .settings-section {
+            display: grid;
+            gap: var(--space-xl);
+        }
+        .settings-banner {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--bg-2);
+        }
+        .settings-banner strong {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--text);
+        }
+        .settings-banner span {
+            color: var(--dim);
+            font-size: 12px;
+        }
+        .settings-card-compact {
+            display: grid;
+            gap: 12px;
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--card);
+        }
+        .settings-card-compact h3 {
+            margin: 0;
+            font-size: 12px;
+            color: var(--cyan);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .settings-list {
+            display: grid;
+            gap: 14px;
+        }
+        .settings-list .setting-row {
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+            padding-bottom: 10px;
+        }
+        .settings-list .setting-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .settings-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 12px 20px 18px;
+            border-top: 1px solid var(--border);
+            background: var(--bg-2);
+        }
     </style>
 </head>
 <body>
@@ -300,13 +655,11 @@
             <button class="nav-btn" data-view="history">
                 <span class="material-icons">history</span>History
             </button>
+            <button class="nav-btn" data-view="settings">
+                <span class="material-icons">settings</span>Settings
+            </button>
         </nav>
 
-        <div class="sidebar-foot">
-            <button class="nav-btn" id="check-update">
-                <span class="material-icons">system_update_alt</span>Updates
-            </button>
-        </div>
     </aside>
 
     <div id="main">
@@ -317,6 +670,9 @@
                 <div class="panel toolbar">
                     <button class="btn" id="select">
                         <span class="material-icons">folder_open</span>Choose file
+                    </button>
+                    <button class="btn" id="use-example">
+                        <span class="material-icons">auto_awesome</span>Use example
                     </button>
 
                     <div id="file-info">
@@ -347,7 +703,15 @@
             <!-- HISTORY -->
             <section class="content-section" id="history-view">
                 <div class="panel history-list">
-                    <div class="panel-head"><span>Builds</span></div>
+                    <div class="panel-head">
+                        <span>Builds <span class="history-count" id="build-count">0</span></span>
+                        <div class="history-tools">
+                            <label class="history-select-all"><input id="build-select-all" type="checkbox">All</label>
+                            <button class="btn small danger" id="bulk-delete-builds" type="button" disabled title="Delete selected builds">
+                                <span class="material-icons">delete</span><span id="bulk-delete-count">Delete</span>
+                            </button>
+                        </div>
+                    </div>
                     <div id="build-history"></div>
                 </div>
 
@@ -385,6 +749,20 @@
         </div>
     </div>
 
+    <!-- EXAMPLES MODAL -->
+    <div id="example-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="example-title">
+        <div class="example-modal-box">
+            <div class="panel-head" id="example-title">
+                <span>Choose an example</span>
+                <button class="btn small" id="example-close">Close</button>
+            </div>
+            <div class="panel-body">
+                <div class="modal-detail">Select one example and one format, then load it.</div>
+                <div class="example-picker" id="example-picker"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- UPDATE MODAL -->
     <div id="update-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="update-title">
         <div class="modal-box">
@@ -398,6 +776,209 @@
                     <button class="btn" id="update-later">Later</button>
                     <button class="btn primary" id="update-install">Update now</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <div class="settings-modal-box">
+            <div class="panel-head" id="settings-title">
+                <span>Settings</span>
+                <button class="btn small" id="settings-close">Close</button>
+            </div>
+
+            <div class="settings-shell">
+                <aside class="settings-sidebar">
+                    <button class="settings-tab active" data-settings-tab="general" type="button"><span class="material-icons">tune</span>General</button>
+                    <button class="settings-tab" data-settings-tab="appearance" type="button"><span class="material-icons">palette</span>Appearance</button>
+                    <button class="settings-tab" data-settings-tab="build" type="button"><span class="material-icons">build</span>Build</button>
+                    <button class="settings-tab" data-settings-tab="permissions" type="button"><span class="material-icons">security</span>Permissions</button>
+                    <button class="settings-tab" data-settings-tab="about" type="button"><span class="material-icons">info</span>About</button>
+                </aside>
+
+                <div class="settings-panel" style="flex: 1;">
+                    <div class="settings-content active" data-settings-panel="general">
+                        <div class="settings-section">
+                            <div class="settings-banner">
+                                <div>
+                                    <strong>Workspace preferences</strong>
+                                    <span>Keep the app tuned to your workflow</span>
+                                </div>
+                                <button class="btn small" id="settings-restore" type="button">Restore defaults</button>
+                            </div>
+
+                            <div class="settings-card-compact">
+                                <h3>General</h3>
+                                <div class="settings-list">
+                                    <div class="setting-row">
+                                        <div>
+                                            <div class="setting-label">Default project format</div>
+                                            <div class="setting-sub">Used when choosing an example</div>
+                                        </div>
+                                        <select class="setting-select" data-setting="defaultFormat">
+                                            <option value="MakeCode">MakeCode</option>
+                                            <option value="MicroPython">MicroPython</option>
+                                            <option value="C++">C++</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-content" data-settings-panel="appearance">
+                        <div class="settings-section">
+                            <div class="settings-card-compact">
+                                <h3>Appearance</h3>
+                                <div class="settings-list">
+                                    <div class="setting-row">
+                                        <div>
+                                            <div class="setting-label">Color mode</div>
+                                            <div class="setting-sub">Follow your system or choose a mode</div>
+                                        </div>
+                                        <select class="setting-select" data-setting="themeMode">
+                                            <option value="system">System (automatic)</option>
+                                            <option value="light">Light</option>
+                                            <option value="dark">Dark</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="setting-row">
+                                        <div>
+                                            <div class="setting-label">Accent palette</div>
+                                            <div class="setting-sub">Changes highlights and terminal colors</div>
+                                        </div>
+                                        <select class="setting-select" data-setting="accent">
+                                            <option value="mint">Mint</option>
+                                            <option value="blue">Ocean blue</option>
+                                            <option value="amber">Amber</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="setting-row">
+                                        <div>
+                                            <div class="setting-label">Console text size</div>
+                                            <div class="setting-sub">Adjust terminal readability</div>
+                                        </div>
+                                        <select class="setting-select" data-setting="consoleFontSize">
+                                            <option value="11">Compact</option>
+                                            <option value="12">Default</option>
+                                            <option value="14">Large</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="setting-row">
+                                        <div>
+                                            <div class="setting-label">Interface spacing</div>
+                                            <div class="setting-sub">Adjust the density of panels and controls</div>
+                                        </div>
+                                        <select class="setting-select" data-setting="spacing">
+                                            <option value="compact">Compact</option>
+                                            <option value="comfortable">Comfortable</option>
+                                            <option value="spacious">Spacious</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-content" data-settings-panel="build">
+                        <div class="settings-section">
+                            <div class="settings-card-compact">
+                                <h3>Build</h3>
+                                <div class="settings-list">
+                                    <div class="setting-row">
+                                        <div>
+                                            <div class="setting-label">Auto clear console</div>
+                                            <div class="setting-sub">Clear terminal before each build</div>
+                                        </div>
+                                        <button class="toggle on" data-setting="clearConsoleBeforeBuild" type="button" aria-label="Toggle console auto clear" aria-pressed="true"></button>
+                                    </div>
+
+                                    <div class="setting-row">
+                                        <div>
+                                            <div class="setting-label">Verbose logging</div>
+                                            <div class="setting-sub">Include advanced command output</div>
+                                        </div>
+                                        <button class="toggle" data-setting="verboseLogs" type="button" aria-label="Toggle verbose logs" aria-pressed="false"></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-content" data-settings-panel="permissions">
+                        <div class="settings-section">
+                            <div class="settings-card-compact">
+                                <h3>Permissions</h3>
+                                <div class="settings-list">
+                                    <div class="setting-row">
+                                        <div>
+                                            <div class="setting-label">Open and build project files</div>
+                                            <div class="setting-sub">Allow source selection, examples, and builds in this app</div>
+                                        </div>
+                                        <button class="toggle on" data-setting="allowProjectFiles" type="button" aria-label="Toggle project file access" aria-pressed="true"></button>
+                                    </div>
+
+                                    <div class="setting-row">
+                                        <div>
+                                            <div class="setting-label">Flash devices</div>
+                                            <div class="setting-sub">Allow the app to start a device flash operation</div>
+                                        </div>
+                                        <button class="toggle on" data-setting="allowFlashing" type="button" aria-label="Toggle device flashing" aria-pressed="true"></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-content" data-settings-panel="about">
+                        <div class="settings-section">
+                            <div class="settings-card-compact">
+                                <h3>About</h3>
+                                <div class="settings-list">
+                                    <div class="setting-row">
+                                        <div>
+                                            <div class="setting-label">micro:bit Compiler Studio</div>
+                                            <div class="setting-sub">Version 1.3.0</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="setting-row">
+                                        <div>
+                                            <div class="setting-label">Support</div>
+                                            <div class="setting-sub">Compiler, examples, flash tools, and helper workflows</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="setting-row">
+                                        <div>
+                                            <div class="setting-label">System</div>
+                                            <div class="setting-sub">Windows desktop • Tauri app shell</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="setting-row">
+                                        <div>
+                                            <div class="setting-label">App updates</div>
+                                            <div class="setting-sub">Check for the latest compiler release</div>
+                                        </div>
+                                        <button class="btn small" id="check-update" type="button">
+                                            <span class="material-icons">system_update_alt</span>Check now
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-actions">
+                <button class="btn" id="settings-reset" type="button">Reset</button>
+                <button class="btn" id="settings-cancel" type="button">Cancel</button>
+                <button class="btn primary" id="settings-save" type="button">Save</button>
             </div>
         </div>
     </div>

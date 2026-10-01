@@ -5,4 +5,5 @@ basic.forever(function () {
     } else {
         basic.showIcon(IconNames.Happy)
     }
+    basic.pause(500)
 })

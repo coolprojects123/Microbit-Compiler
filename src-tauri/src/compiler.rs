@@ -22,6 +22,28 @@ fn root_name(ext: &str) -> Result<&'static str, String> {
     }
 }
 
+fn makecode_dependencies(source: &str) -> Result<Vec<&'static str>, String> {
+    let uses_bluetooth = source.contains("bluetooth.");
+    let uses_radio = source.contains("radio.");
+
+    if uses_bluetooth && uses_radio {
+        return Err("MakeCode cannot use Bluetooth and Radio together because their device settings conflict.".into());
+    }
+
+    let mut dependencies = vec!["core"];
+    if uses_bluetooth {
+        dependencies.push("bluetooth");
+    } else if uses_radio {
+        dependencies.push("radio");
+    }
+
+    if source.contains("microphone.") || source.contains("input.soundLevel") || source.contains("input.onSound") {
+        dependencies.push("microphone");
+    }
+
+    Ok(dependencies)
+}
+
 fn ensure_root(state: &AppState, ext: &str) -> Result<PathBuf, String> {
     let dir = state.engine.join(root_name(ext)?);
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
@@ -50,14 +72,20 @@ async fn build_ts(
     mut log: impl FnMut(&str) + Send,
 ) -> Result<BuildResult, String> {
     let root = ensure_root(state, ".ts")?;
+    let source = std::fs::read_to_string(ts_file).map_err(|e| e.to_string())?;
+    let dependency_names = makecode_dependencies(&source)?;
     let build_folder = make_out_dir(state, ts_file)?;
     let dirs = ensure_tool(app, state, "node", &mut log).await?;
 
     log("🔨 Building TypeScript...\n");
     std::fs::copy(ts_file, root.join("main.ts")).map_err(|e| e.to_string())?;
+    let mut dependencies = serde_json::Map::new();
+    for dependency in &dependency_names {
+        dependencies.insert((*dependency).to_string(), serde_json::Value::String("*".into()));
+    }
     let pxt_json = serde_json::json!({
         "name": "build",
-        "dependencies": { "core": "*", "radio": "*", "microphone": "*" },
+        "dependencies": dependencies,
         "files": ["main.ts"],
     });
     std::fs::write(root.join("pxt.json"), serde_json::to_string_pretty(&pxt_json).unwrap())
@@ -66,6 +94,7 @@ async fn build_ts(
     if !root.join("pxt_modules").exists() {
         run_async_shell_aware("npx", &["pxt", "target", "microbit"], &root, &dirs, |l| log(&format!("{l}\n"))).await?;
     }
+    log(&format!("Syncing MakeCode dependencies: {}\n", dependency_names.join(", ")));
     run_async_shell_aware("npx", &["pxt", "install"], &root, &dirs, |l| log(&format!("{l}\n"))).await?;
     run_async_shell_aware("npx", &["pxt", "build", "--hw", "v2"], &root, &dirs, |l| log(&format!("{l}\n"))).await?;
 
@@ -164,5 +193,32 @@ pub async fn build(
         ".py" => build_python(app, state, file, log).await,
         ".cpp" | ".c" => build_cpp(app, state, file, log).await,
         other => Err(format!("Unsupported file type: {other}")),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::makecode_dependencies;
+
+    #[test]
+    fn bluetooth_dependency_excludes_radio() {
+        assert_eq!(makecode_dependencies("bluetooth.uartWriteString('hi')"), Ok(vec!["core", "bluetooth"]));
+    }
+
+    #[test]
+    fn radio_dependency_excludes_bluetooth() {
+        assert_eq!(makecode_dependencies("radio.sendString('hi')"), Ok(vec!["core", "radio"]));
+    }
+
+    #[test]
+    fn microphone_dependency_is_added_only_when_used() {
+        assert_eq!(makecode_dependencies("input.soundLevel()"), Ok(vec!["core", "microphone"]));
+        assert_eq!(makecode_dependencies("basic.showNumber(1)"), Ok(vec!["core"]));
+    }
+
+    #[test]
+    fn bluetooth_and_radio_conflict_is_reported() {
+        let error = makecode_dependencies("bluetooth.uartWriteString('hi'); radio.sendString('hi')").unwrap_err();
+        assert!(error.contains("Bluetooth and Radio together"));
     }
 }
