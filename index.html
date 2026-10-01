@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Micro:bit Compiler brings together project templates, build tools, and flashing workflows in a clean desktop app for Micro:bit development."
+      content="Micro:bit Compiler is a desktop workflow for building and flashing Micro:bit projects in MakeCode, MicroPython, and C++."
     />
     <title>Micro:bit Compiler</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -19,16 +19,14 @@
   <body>
     <div class="page-shell">
       <header class="topbar">
-        <div class="brand-wrap">
-          <div class="brand-mark">M</div>
-          <div>
-            <p class="eyebrow">Micro:bit tooling</p>
-            <h1>Micro:bit Compiler</h1>
-          </div>
+        <div class="brand" aria-label="Microbit Compiler home">
+          <span class="brand-mark">M</span>
+          <span class="brand-text">Micro:bit Compiler</span>
         </div>
-        <nav class="topnav" aria-label="Main navigation">
+
+        <nav class="nav" aria-label="Main navigation">
           <a href="#features">Features</a>
-          <a href="#projects">Projects</a>
+          <a href="#examples">Examples</a>
           <a href="#download">Download</a>
         </nav>
       </header>
@@ -36,71 +34,67 @@
       <main>
         <section class="hero">
           <div class="hero-copy">
-            <span class="pill">New release • v1.3.0</span>
-            <h2>Build, flash, and prototype your Micro:bit projects with less friction.</h2>
+            <span class="eyebrow">Build for Micro:bit</span>
+            <h1>Write once. Build cleanly. Flash reliably.</h1>
             <p>
-              A clean desktop workflow for MakeCode, MicroPython, and C++ builds —
-              designed to help students, makers, and developers move from code to
-              hardware faster.
+              A simple desktop tool for compiling MakeCode, MicroPython, and C++
+              projects and getting them onto your Micro:bit with less setup friction.
             </p>
-            <div class="cta-row">
-              <a class="primary" href="https://github.com/coolprojects123/Microbit-Compiler/releases">Download releases</a>
-              <a class="secondary" href="https://github.com/coolprojects123/Microbit-Compiler">View source</a>
+
+            <div class="actions">
+              <a class="primary" href="https://github.com/coolprojects123/Microbit-Compiler/releases/latest">Download</a>
+              <a class="secondary" href="https://github.com/coolprojects123/Microbit-Compiler">GitHub</a>
             </div>
-            <ul class="meta-list">
-              <li>Windows + Linux support</li>
-              <li>Built-in examples</li>
-              <li>Theme-aware desktop UI</li>
+
+            <ul class="highlights" aria-label="Product highlights">
+              <li>Windows and Linux</li>
+              <li>Built-in templates</li>
+              <li>Project history</li>
             </ul>
           </div>
-          <div class="hero-card" aria-label="Feature summary card">
-            <div class="mini-panel">
-              <span class="panel-label">Current build</span>
-              <strong>Stable</strong>
+
+          <aside class="info-panel" aria-label="Project summary panel">
+            <div class="panel-block">
+              <span class="label">Version</span>
+              <strong>1.3.0</strong>
             </div>
-            <div class="mini-panel accent-panel">
-              <span class="panel-label">Included</span>
-              <strong>5 project templates</strong>
+            <div class="panel-block">
+              <span class="label">Templates</span>
+              <strong>5 examples</strong>
             </div>
-            <div class="mini-panel">
-              <span class="panel-label">Supported</span>
+            <div class="panel-block">
+              <span class="label">Formats</span>
               <strong>MakeCode • Python • C++</strong>
             </div>
-          </div>
+          </aside>
         </section>
 
-        <section id="features" class="feature-grid">
+        <section id="features" class="features">
           <article class="feature-card">
-            <div class="icon">⚡</div>
-            <h3>Fast project setup</h3>
-            <p>Choose a built-in sample, pick the target format, and start building with minimal setup.</p>
+            <span class="feature-kicker">01</span>
+            <h2>Simple project setup</h2>
+            <p>Pick a template, choose the format, and build without digging through extra configuration.</p>
           </article>
 
           <article class="feature-card">
-            <div class="icon">🧩</div>
-            <h3>Multi-language support</h3>
-            <p>Work with MakeCode projects, MicroPython scripts, and C++ builds inside the same app.</p>
+            <span class="feature-kicker">02</span>
+            <h2>Cross-format support</h2>
+            <p>Use the same toolchain for MakeCode, MicroPython, and C++ work without changing your workflow.</p>
           </article>
 
           <article class="feature-card">
-            <div class="icon">🎨</div>
-            <h3>Modern desktop polish</h3>
-            <p>Light/dark modes, cleaner spacing, and a refined layout make the experience feel product-ready.</p>
-          </article>
-
-          <article class="feature-card">
-            <div class="icon">🛠️</div>
-            <h3>Build history</h3>
-            <p>Review recent tasks, inspect metadata, and manage generated project output without clutter.</p>
+            <span class="feature-kicker">03</span>
+            <h2>Cleaner build flow</h2>
+            <p>Review recent builds, manage output, and keep the app focused on what matters: compiling and flashing.</p>
           </article>
         </section>
 
-        <section id="projects" class="example-section">
-          <div class="section-heading">
-            <p class="eyebrow">Template library</p>
-            <h3>Ready-made examples</h3>
+        <section id="examples" class="examples">
+          <div class="section-header">
+            <span class="eyebrow">Included examples</span>
+            <h2>Small, useful starting points</h2>
           </div>
-          <div class="example-list">
+          <div class="example-tags">
             <span>Blink</span>
             <span>Button Counter</span>
             <span>Compass</span>
@@ -109,12 +103,13 @@
           </div>
         </section>
 
-        <section id="download" class="download-panel">
+        <section id="download" class="download">
           <div>
-            <p class="eyebrow">Release access</p>
-            <h3>Get the latest desktop build</h3>
+            <span class="eyebrow">Latest release</span>
+            <h2>Get the desktop build.</h2>
           </div>
-          <div class="download-actions">
+
+          <div class="actions compact">
             <a class="primary" href="https://github.com/coolprojects123/Microbit-Compiler/releases/latest">Latest release</a>
             <a class="secondary" href="https://github.com/coolprojects123/Microbit-Compiler/releases">All releases</a>
           </div>
