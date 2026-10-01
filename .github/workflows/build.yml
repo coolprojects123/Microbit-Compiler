@@ -3,8 +3,7 @@ name: Build Pipeline
 on:
   push:
     branches:
-      - main
-      - master
+      - "**"
     tags:
       - "v*"
 
@@ -13,6 +12,7 @@ permissions:
 
 jobs:
   build-windows:
+    if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v') }}
     runs-on: windows-latest
 
     steps:
@@ -65,6 +65,7 @@ jobs:
           compression-level: 9
 
   build-linux:
+    if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -218,16 +219,8 @@ jobs:
         run: |
           NOTES_FILE="RELEASE_NOTES.md"
           if [ ! -f "$NOTES_FILE" ]; then
-            cat > "$NOTES_FILE" <<EOF
-# Microbit Compiler $TAG
-
-## Highlights
-- Modernized desktop UI for faster project setup and cleaner workflows
-- Improved example selection and build history management
-- Added theme and app settings controls for a more polished experience
-- Fixed MakeCode Bluetooth and Radio dependency conflicts
-- Improved platform build reliability for Windows and Linux releases
-EOF
+            echo "Missing $NOTES_FILE"
+            exit 1
           fi
 
           if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
@@ -255,3 +248,32 @@ EOF
             xargs -0 gh release upload "$TAG" \
               --repo "$REPO" \
               --clobber
+
+  cleanup-release-notes:
+    if: ${{ github.event_name == 'push' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master' && !startsWith(github.ref, 'refs/tags/v') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for release notes
+        id: release-notes
+        shell: bash
+        run: |
+          if [ -f RELEASE_NOTES.md ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Remove release notes
+        if: steps.release-notes.outputs.exists == 'true'
+        shell: bash
+        run: |
+          rm RELEASE_NOTES.md
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RELEASE_NOTES.md
+          git commit -m "chore: remove release notes for non-release push"
+          git push
