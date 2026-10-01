@@ -210,18 +210,37 @@ jobs:
           echo "Files to upload:"
           find release-files -type f -print
 
-      - name: Create draft release if needed
+      - name: Create or update draft release with notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}
           REPO: ${{ github.repository }}
         run: |
-          if ! gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+          NOTES_FILE="RELEASE_NOTES.md"
+          if [ ! -f "$NOTES_FILE" ]; then
+            cat > "$NOTES_FILE" <<EOF
+# Microbit Compiler $TAG
+
+## Highlights
+- Modernized desktop UI for faster project setup and cleaner workflows
+- Improved example selection and build history management
+- Added theme and app settings controls for a more polished experience
+- Fixed MakeCode Bluetooth and Radio dependency conflicts
+- Improved platform build reliability for Windows and Linux releases
+EOF
+          fi
+
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release edit "$TAG" \
+              --repo "$REPO" \
+              --title "Microbit Compiler $TAG" \
+              --notes-file "$NOTES_FILE"
+          else
             gh release create "$TAG" \
               --repo "$REPO" \
               --draft \
               --title "Microbit Compiler $TAG" \
-              --notes ""
+              --notes-file "$NOTES_FILE"
           fi
 
       # NOTE: releases/latest/download/latest.json only resolves once this
