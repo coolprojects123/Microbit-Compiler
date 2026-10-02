@@ -3,10 +3,6 @@
 Rust rewrite of `compiler.js`/`flash.js`/`main.js`, reusing the existing
 `index.html`/`renderer.js` UI almost unchanged.
 
-**I have not compiled this.** There's no Rust toolchain in the environment I
-worked in, so this is a careful port, not a tested one. Expect a round of
-`cargo build` errors to fix — see "Before this runs" below.
-
 ## Layout
 
 ```
